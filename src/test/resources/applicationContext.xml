@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd  
+        http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd  
+        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd  
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+	<!-- *******************properties file******************* -->
+	<!-- resource list -->
+	<bean id="resourceList" class="java.util.ArrayList">
+		<constructor-arg>
+			<list>
+				<value>classpath:application-test.properties</value>
+				<!-- <value>classpath:application-test1.properties</value> <value>classpath:application-test2.properties</value> 
+					<value>classpath:application-test3.properties</value> -->
+			</list>
+		</constructor-arg>
+	</bean>
+	<!-- support expression language -->
+	<!-- <util:properties id="testProperties" location="classpath:bootstrap-test.properties" 
+		/> -->
+	<bean id="configProperties"
+		class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+		<property name="locations" ref="resourceList">
+		</property>
+	</bean>
+	<!-- support placeholder org.springframework.context.support.PropertySourcesPlaceholderConfigurer -->
+	<!-- <context:property-placeholder location="classpath:applicationResources.properties" 
+		/> -->
+	<bean id="propertyPlaceholderConfigurer"
+		class="org.springframework.context.support.PropertySourcesPlaceholderConfigurer">
+		<property name="ignoreUnresolvablePlaceholders" value="true" />
+		<property name="locations" ref="resourceList" />
+		<!-- <property name="properties" ref="configProperties" /> -->
+	</bean>
+
+
+	<bean id="propertyPlaceholderConfigurer2"
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="ignoreUnresolvablePlaceholders" value="true" />
+		<property name="systemPropertiesModeName" value="SYSTEM_PROPERTIES_MODE_OVERRIDE" />
+		<property name="locations" ref="resourceList" />
+		<!-- <property name="properties" ref="configProperties" /> -->
+	</bean>
+	<!-- <context:property-placeholder location="classpath:application-test.properties" 
+		/> -->
+	<!--******************* bean annotation driven ******************* -->
+	<context:annotation-config />
+	<!-- <context:component-scan base-package="com.xxx.test" /> -->
+	<!-- *******************import local src/main/resources/ ******************* -->
+	<!-- <import resource="classpath:/config/xxx.beans.xml" /> -->
+
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"
+		destroy-method="close">
+		<property name="driverClassName" value="${jdbc.driver}" />
+		<property name="url" value="${jdbc.url_${env}}" />
+		<property name="username" value="${jdbc.username}" />
+		<property name="password" value="${jdbc.password}" />
+		<property name="initialSize" value="10" />
+		<property name="maxActive" value="30" />
+		<property name="maxIdle" value="15" />
+		<property name="minIdle" value="5" />
+		<property name="maxWait" value="120000" />
+		<property name="removeAbandoned" value="true" />
+		<property name="removeAbandonedTimeout" value="60" />
+		<property name="logAbandoned" value="true" />
+		<property name="connectionProperties">
+			<value>clientEncoding=utf-8</value>
+		</property>
+		<property name="testOnBorrow">
+			<value>true</value>
+		</property>
+		<property name="testOnReturn">
+			<value>true</value>
+		</property>
+		<property name="testWhileIdle">
+			<value>true</value>
+		</property>
+		<property name="minEvictableIdleTimeMillis">
+			<value>180000</value>
+		</property>
+		<property name="timeBetweenEvictionRunsMillis">
+			<value>360000</value>
+		</property>
+		<property name="validationQuery">
+			<value>SELECT 1 FROM SYS.DUAL</value>
+		</property>
+	</bean>
+	<!-- DBUnit part -->
+	<!-- DBUnit: replace the default DbUnit data type factory to get support 
+		for custom data types(oracle) -->
+	<bean id="oracle10DataTypeFactory" class="org.dbunit.ext.oracle.Oracle10DataTypeFactory"></bean>
+	<!--DBUnit: ignore memory consumption issues -->
+	<bean id="forwardOnlyResultSetTableFactory" class="org.dbunit.database.ForwardOnlyResultSetTableFactory"></bean>
+	<bean id="dbUnitDatabaseConfig" class="com.github.springtestdbunit.bean.DatabaseConfigBean">
+		<property name="skipOracleRecyclebinTables" value="true" />
+		<property name="datatypeFactory" ref="oracle10DataTypeFactory" />
+		<property name="resultsetTableFactory" ref="forwardOnlyResultSetTableFactory" />
+
+	</bean>
+	<bean id="dbUnitDatabaseConnection"
+		class="com.github.springtestdbunit.bean.DatabaseDataSourceConnectionFactoryBean">
+		<property name="databaseConfig" ref="dbUnitDatabaseConfig" />
+		<property name="dataSource" ref="dataSource" />
+		<!--必须指定需要访问的schema -->
+		<property name="schema" value="XXX" />
+	</bean>
+
+	<!-- DB transaction -->
+	<bean id="txManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+</beans>  
